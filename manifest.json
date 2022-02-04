@@ -1,0 +1,46 @@
+{
+  "name": "Link Collect",
+  "description": "네이버 뉴스 수집 부가기능입니다.",
+  "version": "0.91",
+  "manifest_version": 3,
+  "background": {
+    "service_worker":"background.js"
+  },
+  "permissions": [
+    "tabs",
+    "declarativeContent",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://search.naver.com/*","https://news.naver.com/*"
+      ],
+      "js": [
+        "contentScript.js"
+      ]
+      }
+    ],
+    "externally_connectable": {
+      "matches": ["https://search.naver.com/*","https://news.naver.com/*"]
+    },
+    "action": {
+      "default_icon": {
+        "16":"icon/icon-for-news-16.png",
+        "32":"icon/icon-for-news-32.png",
+        "48":"icon/icon-for-news-48.png",
+        "128":"icon/icon-for-news-128.png"
+      },
+      "default_title": "네이버 뉴스 수집"
+    },
+    "icons": {
+      "16":"icon/icon-for-news-16.png",
+      "32":"icon/icon-for-news-32.png",
+      "48":"icon/icon-for-news-48.png",
+      "128":"icon/icon-for-news-128.png"
+    },
+  "web_accessible_resources": [{
+    "resources": ["popup.html"],
+    "matches": ["<all_urls>"]
+  }]
+}
