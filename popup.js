@@ -29,8 +29,8 @@ const readLocalStorage = async (key,defaultValue) => {
     });
 };
 
-async function getFromSync(){
-    console.log("getFromSync");
+async function getFromLocal(){
+    console.log("getFromLocal");
     TopicDic = await readLocalStorage('nodeDic',{});
 }
 
@@ -39,8 +39,8 @@ async function getFromBackUp(){
     TopicDic = await readLocalStorage('BackUp',{});
 }
 
-function setToSync(_nodeDic){
-  console.log("setToSync");
+function setToLocal(_nodeDic){
+  console.log("setToLocal");
   chrome.storage.local.set({'nodeDic':_nodeDic}, function () {});
 }
 
@@ -49,52 +49,58 @@ function setToBackUp(_nodeDic){
   chrome.storage.local.set({'BackUp':_nodeDic}, function () {});
 }
 
-
 async function initilize(){
     updateText();
-    await getFromSync();
+    await getFromLocal();
     updateText();
 }
 
-function MoveNewsContainer(isUp){
+function MoveNewsContainer(moveBetweenArray,moveInsideArray){
     let currentIndex = topicList.indexOf(selected.query);
-    if(isUp){
-        currentIndex--;
-    }else{
-        currentIndex++;
-    }
-    currentIndex += topicList.length;
+    currentIndex += moveBetweenArray + topicList.length;
     currentIndex %= topicList.length;
     let nextQuery = topicList[currentIndex];
+    let ind = TopicDic[selected.query].findIndex(node => (node.url == selected.url));
+    if(ind == -1) throw new Error('TopicDic에 찾는 url를 가진 노드가 존재 안 합니다.');
+    let movingIndex = (TopicDic[selected.query].length+ind+moveInsideArray)%TopicDic[selected.query].length;
+    // let moveOnHTMLidndex = (moveInsideArray>0)? moveInsideArray+1 : moveInsideArray;
+    // document.querySelector("#"+nextQuery).insertBefore(selected.node,(nextQuery == selected.query && ind+moveOnHTMLidndex > -1&& ind+moveOnHTMLidndex < TopicDic[selected.query].length)?GetHTMLNodeFromUrl(TopicDic[selected.query][ind+moveOnHTMLidndex].url):null);
     if(TopicDic.hasOwnProperty(nextQuery)){
-        TopicDic[nextQuery][selected.url] = TopicDic[selected.query][selected.url];
+        if(moveBetweenArray != 0){
+            TopicDic[nextQuery].push(TopicDic[selected.query][ind]);
+        }else{
+            let tempNode = TopicDic[selected.query][movingIndex];
+            TopicDic[selected.query][movingIndex] = TopicDic[selected.query][ind];
+            TopicDic[selected.query][ind] = tempNode;
+        }
     }else{
-        let obj = {};
-        obj[selected.url] = TopicDic[selected.query][selected.url];
-        TopicDic[nextQuery] = obj;
+        let array = [];
+        array.push(TopicDic[selected.query][ind]);
+        TopicDic[nextQuery] = array;
     }
-    delete TopicDic[selected.query][selected.url];
-    document.querySelector("#"+nextQuery).appendChild(selected.node);
-    let para = (new URL(selected.url)).searchParams;
-    selected.node = document.querySelector("[id='"+para.get("oid")+para.get("aid")+"']");
-    selected.node.querySelector('input[type=radio]').checked = true;
-    selected.node.querySelector('label').style = "background-color:#bfb;border-color: #4c4;";
-    // console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
-    // selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
+    if(ind != -1 && moveBetweenArray != 0) TopicDic[selected.query].splice(ind, 1);
+    // selected.node = GetHTMLNodeFromUrl(selected.url);
+    // selected.node.querySelector('input[type=radio]').checked = true;
+    // selected.node.querySelector('label').style = "background-color:#bfb;border-color: #4c4;";
     selected.query = nextQuery;
-    setToSync(TopicDic);
-    // chrome.runtime.sendMessage({action: "SetNodeDic", nodeDic: TopicDic});
+    setToLocal(TopicDic);
+}
+
+function GetHTMLNodeFromUrl(url){
+    let para = (new URL(url)).searchParams;
+    return document.querySelector("[id='"+para.get("oid")+para.get("aid")+"']");
 }
 
 function DeleteNewsContainer(){
     setToBackUp(TopicDic);
-    delete TopicDic[selected.query][selected.url];
-    // console.log('afterDeleteTopicDic');
-    // console.log(TopicDic);
-    // selected.node.remove();
+    let ind = TopicDic[selected.query].findIndex(node => (node.url == selected.url));
+    if(ind == -1){
+        throw new Error('TopicDic에 찾는 url를 가진 노드가 존재 안 합니다.');
+    }else{
+        TopicDic[selected.query].splice(ind, 1);
+    }
     selected = {};
-    setToSync(TopicDic);
-    // chrome.runtime.sendMessage({action: "SetNodeDic", nodeDic: TopicDic});
+    setToLocal(TopicDic);
 }
 
 function OpenAtNewTab(e){
@@ -106,7 +112,7 @@ function updateText(){
     topicListPart.forEach((node)=>{
         node.innerHTML = '';
         if(!TopicDic.hasOwnProperty(node.id)) return;
-        Object.entries(TopicDic[node.id]).forEach(([key, value]) => {
+        TopicDic[node.id].forEach(value => {
             let newsDivclone = newsDiv.cloneNode(true);
             let para = (new URL(value.url)).searchParams;
             newsDivclone.id = para.get("oid")+para.get("aid");
@@ -122,6 +128,10 @@ function updateText(){
             newsDivclone.querySelector(".url").innerText = value.url;
             newsDivclone.querySelector(".url").setAttribute("href",value.url);
             newsDivclone.querySelector(".url").addEventListener("click",OpenAtNewTab);
+            if(selected.url == value.url){
+                newsDivclone.querySelector('input[type=radio]').checked = true;
+                // newsDivclone.querySelector('label').style = "background-color:#bfb;border-color: #4c4;";
+            }
             node.appendChild(newsDivclone);
         });
     });
@@ -159,18 +169,18 @@ function reset(){
     setToBackUp(TopicDic);
     TopicDic = {};
     selected = {};
-    setToSync(TopicDic);
+    setToLocal(TopicDic);
 }
 
 async function revertReset(){
     await getFromBackUp();
-    setToSync(TopicDic);
+    setToLocal(TopicDic);
 }
 
 document.addEventListener("keydown",function(event){
     switch(event.key){
         case 'Delete' || 'Backspace':
-            if(selected != {} && TopicDic.hasOwnProperty(selected.query) && TopicDic[selected.query].hasOwnProperty(selected.url)){
+            if(selected != {} && TopicDic.hasOwnProperty(selected.query) && TopicDic[selected.query].findIndex(node => (node.url == selected.url)) != -1){
                 DeleteNewsContainer();
                 countString();
             }
@@ -178,7 +188,7 @@ document.addEventListener("keydown",function(event){
 
         case "ArrowUp":
             if(selected != {}){
-                MoveNewsContainer(true);
+                MoveNewsContainer(-1,0);
                 console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
                 selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
             }
@@ -186,7 +196,21 @@ document.addEventListener("keydown",function(event){
 
         case "ArrowDown":
             if(selected != {}){
-                MoveNewsContainer(false);
+                MoveNewsContainer(1,0);
+                console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
+                selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
+            }
+            break;
+        case "ArrowLeft":
+            if(selected != {}){
+                MoveNewsContainer(0,-1);
+                console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
+                selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
+            }
+            break;
+        case "ArrowRight":
+            if(selected != {}){
+                MoveNewsContainer(0,1);
                 console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
                 selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
             }

@@ -34,13 +34,13 @@ const readLocalStorage = async (key,defaultValue) => {
     });
 };
 
-async function getFromSync(){
-    console.log("getFromSync");
+async function getFromLocal(){
+    console.log("getFromLocal");
     nodeDic = await readLocalStorage('nodeDic',{});
 }
 
-function setToSync(_nodeDic){
-  console.log("setToSync");
+function setToLocal(_nodeDic){
+  console.log("setToLocal");
   chrome.storage.local.set({'nodeDic':_nodeDic}, function () {});
 }
   
@@ -126,8 +126,8 @@ function EditColorFromNodeDic(nodeDicKeySet,elem,url){
 function getNodeDic(NodeDic){
     nodeDicKeySet.clear();
     Object.values(NodeDic).forEach((value) => {
-        Object.keys(value).forEach((key) => {
-            nodeDicKeySet.add(key);
+        value.forEach(node => {
+            nodeDicKeySet.add(node.url);
         });
     });
 }
@@ -144,21 +144,20 @@ function editNodeDic(current,edit){
     if(edit == "add"){
         let query = 'etc';
         if(nodeDic.hasOwnProperty(query)){
-            nodeDic[query][current.url] = current;
+            nodeDic[query].push(current);
         }else{
-            let obj = {};
-            obj[current.url] = current;
-            nodeDic[query] = obj;
+            let array = [];
+            array.push(current);
+            nodeDic[query] = array;
         }
     }else if(edit == "delete"){
         Object.entries(nodeDic).some(([key, value]) => {
-            if(value.hasOwnProperty(current.url)){
-                delete nodeDic[key][current.url];
-            }
-            return value.hasOwnProperty(current.url);
+            let ind = value.findIndex(node => (node.url == current.url));
+            if(ind != -1) value.splice(ind, 1);
+            return (ind != -1);
         });
     }
-    setToSync(nodeDic);
+    setToLocal(nodeDic);
 }
 
 function updateNodeDic(edit){
@@ -197,7 +196,7 @@ async function Initiate(){
     if(currentOnSearch){
         AddNewsToArray(mainNewsList,'[title][href]','div.info_group');
         AddNewsToArray(subNewsList,'[title][href]','span.sub_area');
-        await getFromSync();
+        await getFromLocal();
         console.log("nodeDic : %o",nodeDic);
         getNodeDic(nodeDic);
         EditArrayNewsColor(mainNewsList,'[title][href]','div.info_group');
@@ -207,7 +206,7 @@ async function Initiate(){
         rightEdge = contentDiv.querySelector("#main_pack").getBoundingClientRect().right;
     }else{
         AddNaverNewsToArray();
-        await getFromSync();
+        await getFromLocal();
         getNodeDic(nodeDic);
         EditColorFromNodeDic(nodeDicKeySet,current.node,current.url);
         contentDiv = document.querySelector("table.container");
@@ -244,7 +243,7 @@ async function start(Action){
 }
 
 (async () => {
-    await getFromSync();
+    await getFromLocal();
     active = await readLocalStorage('active',false);
     await start(active);
 })();
