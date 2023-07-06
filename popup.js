@@ -119,7 +119,7 @@ function updateText(){
             newsDivclone.querySelector("input").id = value.url;
             newsDivclone.querySelector("input").addEventListener('click',(e)=>{
                 selected.node = e.target.parentNode;
-                selected.query = e.path[2].id;
+                selected.query = e.composedPath()[2].id;
                 selected.url = value.url;
             });
             newsDivclone.querySelector("label").setAttribute("for",value.url);
