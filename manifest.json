@@ -1,7 +1,7 @@
 {
   "name": "Link Collect",
   "description": "네이버 뉴스 수집 부가기능입니다.",
-  "version": "1.0.0",
+  "version": "1.1.8",
   "manifest_version": 3,
   "background": {
     "service_worker":"background.js"
@@ -14,7 +14,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://search.naver.com/*","https://news.naver.com/*"
+        "https://search.naver.com/*","https://n.news.naver.com/*"
       ],
       "js": [
         "contentScript.js"
@@ -22,7 +22,7 @@
       }
     ],
     "externally_connectable": {
-      "matches": ["https://search.naver.com/*","https://news.naver.com/*"]
+      "matches": ["https://search.naver.com/*","https://n.news.naver.com/*"]
     },
     "action": {
       "default_icon": {

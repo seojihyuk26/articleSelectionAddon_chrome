@@ -162,7 +162,7 @@ String.prototype.getBytes = function() {
 function countString(){
     let onelineText = document.querySelector("#copyable").innerText;
     onelineText.replaceAll(/\n/g, "\r\n");
-    countStringDiv.innerText = onelineText.getBytes();
+    countStringDiv.innerText = "현재 "+onelineText.getBytes()+" 자";
 }
 
 function reset(){
@@ -186,31 +186,31 @@ document.addEventListener("keydown",function(event){
             }
             break;
 
-        case "ArrowUp":
-            if(selected != {}){
-                MoveNewsContainer(-1,0);
-                console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
-                selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
-            }
-            break;
-
-        case "ArrowDown":
-            if(selected != {}){
-                MoveNewsContainer(1,0);
-                console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
-                selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
-            }
-            break;
+        // case "ArrowUp":
+            // if(selected != {}){
+                // MoveNewsContainer(-1,0);
+                // console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
+                // selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
+            // }
+            // break;
+// 
+        // case "ArrowDown":
+            // if(selected != {}){
+                // MoveNewsContainer(1,0);
+                // console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
+                // selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
+            // }
+            // break;
         case "ArrowLeft":
             if(selected != {}){
-                MoveNewsContainer(0,-1);
+                if(event.shiftKey){MoveNewsContainer(-1,0);}else{MoveNewsContainer(0,-1);}
                 console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
                 selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
             }
             break;
         case "ArrowRight":
             if(selected != {}){
-                MoveNewsContainer(0,1);
+                if(event.shiftKey){MoveNewsContainer(1,0);}else{MoveNewsContainer(0,1);}
                 console.log("selected.node.querySelector('input[type=radio]') : %o, checked : %s,label : %o,labelColor : %o" ,selected.node.querySelector('input[type=radio]') ,
                 selected.node.querySelector('input[type=radio]').checked,selected.node.querySelector('label'),selected.node.querySelector('label').style);
             }

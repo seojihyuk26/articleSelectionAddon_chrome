@@ -1,5 +1,14 @@
-let mainNewsList = document.querySelectorAll(".news_area");
-let subNewsList = document.querySelectorAll("span.sub_wrap");
+const CssVariables={
+    newsList:".list_news",
+    mainNewsList:".news_area",
+    mainNewsInfoQuery:'div.info_group',
+    subNewsList:".sub_bx",
+    subNewsInfoQuery:'.sub_area',
+    headerIndividualNewsPage:".media_end_head",
+}
+let newsList = document.querySelector(CssVariables.newsList);
+let mainNewsList = document.querySelectorAll(CssVariables.mainNewsList);
+let subNewsList = document.querySelectorAll(CssVariables.subNewsList);
 let current = new Object();
 let currentUrl = document.location.hostname;
 let currentOnSearch = (currentUrl == "search.naver.com");
@@ -83,6 +92,11 @@ function resetCurrent(){
     current.node = null;
 }
 
+function repeatToMainAndSubNews(func) {
+    func(mainNewsList,'[title][href]',CssVariables.mainNewsInfoQuery);
+    func(subNewsList,'[title][href]',CssVariables.subNewsInfoQuery);
+}
+
 function AddNewsToArray(NewsList,titleQuery,infoQuery) {
     for (let elem of NewsList) {
         elem.addEventListener("mouseenter", addToCurrent(titleQuery,infoQuery,elem));
@@ -99,8 +113,8 @@ function RemoveNewsToArray(NewsList,titleQuery,infoQuery) {
 }
 
 function AddNaverNewsToArray(){
-    let newsTitlePanel = document.querySelector("div.article_header");
-    current.title = newsTitlePanel.querySelector('h3.tts_head').innerText;
+    let newsTitlePanel = document.querySelector("div.media_end_head");
+    current.title = newsTitlePanel.querySelector('.media_end_head_headline').innerText;
     current.newsPaperName = newsTitlePanel.querySelector('img[title]').title;
     current.url = location.href;
     current.node = newsTitlePanel;
@@ -183,24 +197,24 @@ function addAndRemoveNewsByKeyDown(event){
 function listenUpdate(){
     getNodeDic(nodeDic);
     if(currentOnSearch){
-        EditArrayNewsColor(mainNewsList,'[title][href]','div.info_group');
-        EditArrayNewsColor(subNewsList,'[title][href]','span.sub_area');
+        repeatToMainAndSubNews(EditArrayNewsColor);
     }else{
         EditColorFromNodeDic(nodeDicKeySet,current.node,current.url);
     }
 }
 
 async function Initiate(){
+    console.log("Initiate");
     let headerHeight ="0";
     let rightEdge = "0";
+    mainNewsList = document.querySelectorAll(CssVariables.mainNewsList);
+    subNewsList = document.querySelectorAll(CssVariables.subNewsList);
     if(currentOnSearch){
-        AddNewsToArray(mainNewsList,'[title][href]','div.info_group');
-        AddNewsToArray(subNewsList,'[title][href]','span.sub_area');
+        repeatToMainAndSubNews(AddNewsToArray);
         await getFromLocal();
         console.log("nodeDic : %o",nodeDic);
         getNodeDic(nodeDic);
-        EditArrayNewsColor(mainNewsList,'[title][href]','div.info_group');
-        EditArrayNewsColor(subNewsList,'[title][href]','span.sub_area');
+        repeatToMainAndSubNews(EditArrayNewsColor);
         outsideDiv.querySelector("#header_wrap")
         headerHeight = outsideDiv.querySelector("#header_wrap").scrollHeight;
         rightEdge = contentDiv.querySelector("#main_pack").getBoundingClientRect().right;
@@ -209,9 +223,10 @@ async function Initiate(){
         await getFromLocal();
         getNodeDic(nodeDic);
         EditColorFromNodeDic(nodeDicKeySet,current.node,current.url);
-        contentDiv = document.querySelector("table.container");
-        headerHeight = outsideDiv.querySelector("#header").scrollHeight;
-        rightEdge = contentDiv.querySelector("td.content").getBoundingClientRect().right;
+        outsideDiv = document.querySelector("#ct_wrap");
+        contentDiv = document.querySelector(".ct_scroll_wrapper");
+        headerHeight = outsideDiv.querySelector(CssVariables.headerIndividualNewsPage).scrollHeight;
+        rightEdge = contentDiv.querySelector("#newsct").getBoundingClientRect().right;
     }
     document.addEventListener("keydown",addAndRemoveNewsByKeyDown);
     popupFrame.style.height = "calc(100% - "+ headerHeight +"px)";
@@ -222,8 +237,7 @@ async function Initiate(){
 function DeActivate(){
     console.log("DeActivate");
     if(currentOnSearch){
-        RemoveNewsToArray(mainNewsList,'[title][href]','div.info_group');
-        RemoveNewsToArray(subNewsList,'[title][href]','span.sub_area');
+        repeatToMainAndSubNews(RemoveNewsToArray);
     }else{
         EditColorFromNodeDic(new Set([]),current.node,current.url);
     }
@@ -262,6 +276,17 @@ chrome.storage.local.onChanged.addListener((changes,area)=>{
     });
 });
 
+if(currentOnSearch){
+const observer = new MutationObserver(async (mutations, observer) => {
+    console.log(mutations, observer);
+    await Initiate();
+  });
+  observer.observe(newsList, {
+    subtree: true,
+    childList: true
+  });
+}
+
 window.addEventListener('resize', function(event){
     let headerHeight ="0";
     let rightEdge = "0";
@@ -269,8 +294,8 @@ window.addEventListener('resize', function(event){
         headerHeight = outsideDiv.querySelector("#header_wrap").scrollHeight;
         rightEdge = contentDiv.querySelector("#main_pack").getBoundingClientRect().right;
     }else{
-        headerHeight = outsideDiv.querySelector("#header").scrollHeight;
-        rightEdge = contentDiv.querySelector("td.content").getBoundingClientRect().right;
+        headerHeight = outsideDiv.querySelector(CssVariables.headerIndividualNewsPage).scrollHeight;
+        rightEdge = contentDiv.querySelector("#newsct").getBoundingClientRect().right;
     }
     popupFrame.style.height = "calc(100% - "+ headerHeight +"px)";
     popupFrame.style.width = "calc(100% - " +rightEdge +"px)";
