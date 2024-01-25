@@ -25,7 +25,7 @@ current.url = '';
 popupFrame.setAttribute("id","popUpExtension");
 popupFrame.setAttribute("src",chrome.runtime.getURL("popup.html"));
 popupFrame.style.position = "fixed";
-popupFrame.style["z-index"] = "51";
+popupFrame.style["z-index"] = "10001";
 popupFrame.style.right = "0";
 popupFrame.style["background-color"] = "white";
 popupFrame.style.width = "350px";
